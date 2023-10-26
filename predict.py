@@ -85,10 +85,10 @@ def predict(image_path, model, topk=5, category_names=None, device='cpu'):
 
     probs = top_probs.squeeze().cpu().numpy().tolist()
 
-    # check if categofy_names was wanted
+    # check if category_names was wanted
     if category_names:
       with open(category_names, 'r') as f:
-          cat_to_name = json.load(f)
+          cat_to_name = json.load(f, strict=False) # to avoid error at some workspaces and library versions, strict keyword must be set to false
       flower_names = [cat_to_name[cat] for cat in classes] # change class number to flower names
     else: # other, just return class number
       flower_names = classes
