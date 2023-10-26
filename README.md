@@ -30,3 +30,24 @@ In order to use the application:
         >
         > python train.py data_dir --gpu
         >
+
+## How to use predict.py
+
+- Basic usage:
+  >
+  > python predict.py /path/to/image /path/to/checkpoint_file
+  >
+  will return flower class and probablity (will not display name unless indicated with option stated below)
+- Options:
+   - To set number of top K most likely classes (defaulted to 5 if not indicated):
+      >
+      > python predict.py /path/to/image /path/to/checkpoint --top_k 3
+      >
+   - To get names of flowers instead of class number:
+      >
+      > python predict.py /path/to/image /path/to/checkpoint --category_names cat_to_name.json
+      >
+   - To set GPU for inference:
+      >
+      > python predict.py /path/to/image /path/to/checkpoint --gpu
+      >
