@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='Train a new network on a data set'
 
 parser.add_argument('data_directory', type=str, help='Indicate data directory')
 parser.add_argument('--save_dir', type=str, help='Set directory to save checkpoints')
-parser.add_argument('--arch', type=str, help='Choose architecture from VGG16 or resnet18')
+parser.add_argument('--arch', type=str, default='vgg', help='Choose architecture from vgg or densenet(will default to vgg16)')
 parser.add_argument('--learning_rate', type=float, help='Set hyperparameter learning rate')
 parser.add_argument('--hidden_units', type=int, help='Set hyperparameter hidden unit')
 parser.add_argument('--epochs', type=int, help='Set hyperparameter epochs')
@@ -37,15 +37,15 @@ test_dir = data_dir + '/test'
 
 # get hyperparameter values from command-line arguments or use defaults
 learning_rate = args.learning_rate if args.learning_rate else 0.001
-hidden_units = args.hidden_units if args.hidden_units else 512
+hidden_units = args.hidden_units if args.hidden_units else 4096
 epochs = args.epochs if args.epochs else 3
 
-# hyperparameters dictionary
-hyperparameters = {
-   'learning_rate': learning_rate,
-   'classifier_linear': [25088, hidden_units],
-   'epochs': epochs
-}
+# # hyperparameters dictionary
+# hyperparameters = {
+#    'learning_rate': learning_rate,
+#    'classifier_linear': [25088, hidden_units],
+#    'epochs': epochs
+# }
 
 
 mean = [0.485, 0.456, 0.406]
@@ -102,30 +102,59 @@ with open('cat_to_name.json', 'r') as f:
     cat_to_name = json.load(f)
 
 
-# set architecture using arch from script if provided, if not default to vgg16
-if args.arch:
-   if args.arch == 'vgg16':
-      model = models.vgg16(pretrained = True)
-   elif args.arch == 'resnet18':
-      model = models.resnet18(pretrained = True)
-   else:
-      print("Invalid architecture input. Defaulting to VGG16")
-      model = models.vgg16(pretrained = True)
+# set architecture using arch from script if provided, if not default to vgg
+if args.arch == 'vgg':
+   model = models.vgg16(pretrained=True)
+   # freeze parameters
+   for param in model.parameters():
+      param.requires_grad = False
+   classifier = nn.Sequential(
+      nn.Linear(25088, hidden_units),
+      nn.ReLU(),
+      nn.Dropout(0.5),
+      nn.Linear(hidden_units, 102),
+      nn.LogSoftmax(dim=1)
+   )
+elif args.arch == 'densenet':
+   model = models.densenet121(pretrained=True)
+    
+    # freeze parameters
+   for param in model.parameters():
+      param.requires_grad = False
+   classifier = nn.Sequential(
+       nn.Linear(1024, hidden_units),
+       nn.ReLU(),
+       nn.Dropout(0.5),
+       nn.Linear(hidden_units, 102),
+       nn.LogSoftmax(dim=1)
+   )
+else:
+   print("Architecture input error, will default to vgg")
+   model = models.vgg16(pretrained=True)
+   # freeze parameters
+   for param in model.parameters():
+      param.requires_grad = False
+   classifier = nn.Sequential(
+      nn.Linear(25088, hidden_units),
+      nn.ReLU(),
+      nn.Dropout(0.5),
+      nn.Linear(hidden_units, 102),
+      nn.LogSoftmax(dim=1)
+   )
 
-# freeze parameters
-for param in model.parameters():
-    param.requires_grad = False
+# Commented out because classifier is now set on if condition statements
+# classifier = nn.Sequential(
+#    nn.Linear(25088, hidden_units),
+#    nn.ReLU(),
+#    nn.Dropout(0.5),
+#    nn.Linear(hidden_units, 102),  
+#    nn.LogSoftmax(dim=1)
+# )
 
-
-classifier = nn.Sequential(
-    nn.Linear(25088, hidden_units),
-    nn.ReLU(),
-    nn.Dropout(0.5),
-    nn.Linear(hidden_units, 102),  
-    nn.LogSoftmax(dim=1)
-)
-
+# resnet does not have classifer attacched
+# model.fc = classifier
 model.classifier = classifier
+
 
 # loss function and optimizer
 # Adam is a good default choice for learning speed accordingly
@@ -212,13 +241,12 @@ checkpoint_path = 'checkpoint.pth'
 
 class_to_idx = image_datasets['training'].class_to_idx
 
-# save number of opochs, optimizer state
+# save number of epochs, optimizer state
 checkpoint = {
    'state_dict': model.state_dict(),
    'class_to_idx': class_to_idx,
    'epochs': epoch_num,
    'optimizer_state': optimizer.state_dict,
-   'hyperparameters': hyperparameters
 }
 
 # save the created dict
