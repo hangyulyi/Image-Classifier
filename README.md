@@ -3,7 +3,8 @@
 Project code for Udacity's AI Programming with Python Nanodegree program. In this project, students first develop code for an image classifier built with PyTorch, then convert it into a command line application.
 
 In order to use the application:
-NOTE: Data set of flower files is not in repo (it's 10,000 pictures of flowers)
+
+NOTE: Data set of flower files is not in repo (it's like 10,000 pictures of flowers)
 1. train.py is used to train a new network on a dataset and save the model as a checkpoint.
 2. predict.py uses a trained network to predict the class for an input image
 
